@@ -8,6 +8,7 @@
   "repository": "",
   "license": "MIT",
   "author": "",
+  "main": "addon/index.js",
   "directories": {
     "doc": "doc",
     "test": "tests"
@@ -63,5 +64,8 @@
   },
   "ember-addon": {
     "configPath": "tests/dummy/config"
+  },
+  "resolutions": {
+    "@glimmer/tracking/@glimmer/validator": "^0.53.0"
   }
 }
