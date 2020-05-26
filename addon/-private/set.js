@@ -2,7 +2,15 @@ import { createTag, consumeTag, dirtyTag } from './util/tag-tracking';
 import { consumeCollection, dirtyCollection } from './util/collections'
 import { createTrackedDeep } from '.';
 
-export default class DeepTrackedSet {
+export default function deepTrackedSet(set, shallow) {
+  return new DeepTrackedSet(set, shallow);
+}
+
+export function isTrackedSet(set) {
+  return set instanceof DeepTrackedSet;
+}
+
+class DeepTrackedSet {
   constructor(set, shallow = false) {
     let values;
 
@@ -16,21 +24,21 @@ export default class DeepTrackedSet {
       }
     }
 
-    this.#shallow = shallow;
-    this.#values = values;
+    this._s = shallow;
+    this._v = values;
   }
 
-  #shallow;
-  #values;
-  #tags = new Map();
-  #collection = createTag();
+  _s;
+  _v;
+  _t = new Map();
+  _c = createTag();
 
   _getOrCreateTag(value) {
-    let tag = this.#tags.get(value);
+    let tag = this._t.get(value);
 
     if (tag === undefined) {
       tag = createTag();
-      this.#tags.set(value, tag)
+      this._t.set(value, tag)
     }
 
     return tag;
@@ -40,74 +48,74 @@ export default class DeepTrackedSet {
   has(value) {
     consumeTag(this._getOrCreateTag(value));
 
-    return this.#values.has(value);
+    return this._v.has(value);
   }
 
   // **** ALL GETTERS ****
   [Symbol.iterator]() {
-    consumeCollection(this, this.#collection);
-    return this.#values[Symbol.iterator]();
+    consumeCollection(this, this._c);
+    return this._v[Symbol.iterator]();
   }
 
   entries() {
-    consumeCollection(this, this.#collection);
-    return this.#values.entries();
+    consumeCollection(this, this._c);
+    return this._v.entries();
   }
 
   keys() {
-    consumeCollection(this, this.#collection);
-    return this.#values.keys();
+    consumeCollection(this, this._c);
+    return this._v.keys();
   }
 
   values() {
-    consumeCollection(this, this.#collection);
-    return this.#values.values();
+    consumeCollection(this, this._c);
+    return this._v.values();
   }
 
   forEach(fn) {
-    consumeCollection(this, this.#collection);
-    this.#values.forEach(fn);
+    consumeCollection(this, this._c);
+    this._v.forEach(fn);
   }
 
   get size() {
-    consumeCollection(this, this.#collection);
-    return this.#values.size;
+    consumeCollection(this, this._c);
+    return this._v.size;
   }
 
   // **** KEY SETTERS ****
   add(value) {
-    dirtyCollection(this, this.#collection);
+    dirtyCollection(this, this._c);
 
-    let tag = this.#tags.get(value);
+    let tag = this._t.get(value);
 
     if (tag !== undefined) {
       dirtyTag(tag);
     }
 
-    this.#values.add(this.#shallow === true ? value : createTrackedDeep(value, false));
+    this._v.add(this._s === true ? value : createTrackedDeep(value, false));
   }
 
   delete(value) {
-    dirtyCollection(this, this.#collection);
+    dirtyCollection(this, this._c);
 
-    let tag = this.#tags.get(value);
+    let tag = this._t.get(value);
 
     if (tag !== undefined) {
       dirtyTag(tag);
-      this.#tags.delete(key);
+      this._t.delete(key);
     }
 
-    this.#values.delete(value);
+    this._v.delete(value);
   }
 
   // **** ALL SETTERS ****
   clear() {
-    dirtyCollection(this, this.#collection);
+    dirtyCollection(this, this._c);
 
-    this.#tags.forEach(dirtyTag);
+    this._t.forEach(dirtyTag);
 
-    this.#tags.clear();
-    this.#values.clear();
+    this._t.clear();
+    this._v.clear();
   }
 }
 
